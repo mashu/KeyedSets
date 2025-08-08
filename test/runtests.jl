@@ -11,6 +11,8 @@ using Test
     @test length(ks) == 1
     @test ks["ACGT"] == "seq1"
     @test haskey(ks, "ACGT")
+    @test !isempty(ks)
+    @test_throws KeyError ks["TTTT"]
 
     # duplicate identical
     push!(ks, ("ACGT", "seq1"))
@@ -71,4 +73,52 @@ end
     @test _is_Int_Sym(ks)
     push!(ks, (2, :b))
     @test length(ks) == 2
+end
+
+@testset "names, keys, values, collect, iteration" begin
+    ks = KeyedSet([("A","n1"), ("B","n2")])
+    @test Set(KeyedSets.names(ks)) == Set(["n1","n2"]) # module-qualified to avoid Base.names
+    @test Set(collect(values(ks))) == Set(["n1","n2"]) # Base.values forwarder
+    @test Set(collect(keys(ks))) == Set(["A","B"]) # Base.keys forwarder
+    @test Set(collect(sequences(ks))) == Set(["A","B"]) # helper
+    # iteration yields KeyedPair
+    pairs = [(kp.sequence, kp.name) for kp in ks]
+    @test Set(pairs) == Set([("A","n1"), ("B","n2")])
+    # collect returns tuples
+    @test Set(collect(ks)) == Set([("A","n1"), ("B","n2")])
+end
+
+@testset "equality ignores names" begin
+    a = KeyedSet([("X","n1"), ("Y","n2")])
+    b = KeyedSet([("Y","m2"), ("X","m1")])
+    c = KeyedSet([("X","n1"), ("Z","n3")])
+    @test a == b
+    @test !(a == c)
+end
+
+@testset "Base set operations (wrappers) and empty" begin
+    a = KeyedSet([("AAA","x"), ("BBB","y")])
+    b = KeyedSet([("BBB","y2"), ("CCC","x")])
+    # union wrapper
+    ur = union(a, b)
+    @test Set(sequences(ur)) == Set(["AAA","BBB","CCC"]) 
+    # intersect wrapper
+    ir = intersect(a, b)
+    @test Set(sequences(ir)) == Set(["BBB"]) 
+    # setdiff wrapper
+    dr = setdiff(a, b)
+    @test Set(sequences(dr)) == Set(["AAA"]) 
+    # empty
+    e = empty(a)
+    @test isempty(e)
+    _same_params(::KeyedSet{String,String}) = true
+    _same_params(::KeyedSet) = false
+    @test _same_params(e)
+end
+
+@testset "show formatting" begin
+    ks = KeyedSet([("AAA","x")])
+    s = sprint(show, ks)
+    @test occursin("KeyedSet{", s)
+    @test occursin("size=1", s)
 end
