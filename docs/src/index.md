@@ -4,7 +4,7 @@ CurrentModule = KeyedSets
 
 # KeyedSets
 
-Documentation for [KeyedSets](https://github.com/mashu/KeyedSets.jl).
+Documentation for `KeyedSets`. The latest docs are deployed from the `main` branch as stable.
 
 ## Overview
 
@@ -39,12 +39,16 @@ The `_with_conflicts` variants return `(result, conflicts::ConflictSummary)`. Th
 ```julia
 using KeyedSets
 
-a = KeyedSet([("AAA", "x"), ("BBB", "y")])
-b = KeyedSet([("BBB", "y2"), ("CCC", "x")])
+"""
+DNA example: sequences as Strings, names as Strings
+"""
+a = KeyedSet([("ACGT", "seq1"), ("AAA", "alpha")])
+b = KeyedSet([("AAA", "alpha2"), ("TTT", "beta")])
 
 res, conf = union_with_conflicts(a, b)
-length(res)       # 3
-conf.name_collisions
+collect(sequences(res))         # => ["ACGT", "AAA", "TTT"] (order not guaranteed)
+res["AAA"]                      # => "alpha" (left wins)
+conf.sequence_name_mismatches   # => [("AAA", "alpha", "alpha2")]
 ```
 
 ```@index
